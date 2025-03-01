@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Assistant</title>
+    <!-- Chargement des fichiers CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <!-- Icône du site -->
+    <link rel="icon" href="assets/images/favicon.png">
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Barre latérale -->
+        <aside class="sidebar">
+            <!-- En-tête de la barre latérale -->
+            <div class="sidebar-header">
+                <button class="new-chat-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>Nouvelle conversation</span>
+                </button>
+            </div>
+            
+            <!-- Liste des conversations -->
+            <div class="conversations-list">
+                <!-- Les conversations seront ajoutées ici dynamiquement -->
+            </div>
+            
+            <!-- Pied de la barre latérale -->
+            <div class="sidebar-footer">
+                <button class="settings-btn">
+                    <i class="fas fa-cog"></i>
+                    <span>Paramètres</span>
+                </button>
+                <button class="user-btn">
+                    <i class="fas fa-user"></i>
+                    <span>Profil</span>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Zone principale du chat -->
+        <main class="chat-area">
+            <!-- En-tête de la zone de chat -->
+            <header class="chat-header">
+                <div class="current-model">
+                    <span class="model-name">Assistant IA</span>
+                    <i class="fas fa-chevron-down model-selector-icon"></i>
+                </div>
+            </header>
+            
+            <!-- Zone d'affichage des messages -->
+            <div class="messages-container">
+                <!-- Message de bienvenue -->
+                <div class="welcome-screen">
+                    <h1>Assistant IA</h1>
+                    <p>Comment puis-je vous aider aujourd'hui?</p>
+                </div>
+                
+                <!-- Les messages s'afficheront ici -->
+                <div class="messages-list"></div>
+            </div>
+            
+            <!-- Zone de saisie du message -->
+            <div class="input-area">
+                <form id="message-form">
+                    <div class="input-container">
+                        <textarea 
+                            id="user-input" 
+                            placeholder="Posez votre question ici..." 
+                            rows="1"
+                            autofocus
+                        ></textarea>
+                        <button type="submit" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <p class="disclaimer">Notre assistant peut parfois générer des informations inexactes.</p>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modèle de sélection (caché par défaut) -->
+    <div class="model-selector" style="display: none;">
+        <div class="model-option selected">
+            <span>Assistant Standard</span>
+            <p>Version rapide pour les questions générales</p>
+        </div>
+        <div class="model-option">
+            <span>Assistant Pro</span>
+            <p>Version avancée pour les questions techniques</p>
+        </div>
+    </div>
+
+    <!-- Scripts JavaScript -->
+    <script src="js/ui.js"></script>
+    <script src="js/mock-backend.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

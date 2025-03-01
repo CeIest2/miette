@@ -1,0 +1,155 @@
+/* responsive.css - Styles pour la responsivité */
+
+/* Tablettes et petits écrans */
+@media (max-width: 992px) {
+    :root {
+        --sidebar-width: 240px;
+    }
+    
+    .welcome-screen h1 {
+        font-size: 2rem;
+    }
+    
+    .welcome-screen p {
+        font-size: 1rem;
+    }
+    
+    .messages-list {
+        max-width: 700px;
+    }
+}
+
+/* Mobiles en mode paysage */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 0; /* Barre latérale cachée par défaut */
+    }
+    
+    .sidebar {
+        position: fixed;
+        left: -280px; /* Caché hors écran */
+        width: 280px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar.open {
+        left: 0; /* Visible quand ouvert */
+    }
+    
+    .menu-toggle {
+        display: block;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 100;
+        padding: 8px;
+        font-size: 20px;
+        background-color: var(--chat-bg);
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chat-header {
+        padding-left: 50px; /* Espace pour le bouton de menu */
+    }
+    
+    .input-area {
+        padding: 10px 10px 20px;
+    }
+    
+    .messages-list {
+        padding: 0 10px;
+    }
+    
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+    
+    .overlay.open {
+        display: block;
+    }
+}
+
+/* Mobiles en mode portrait */
+@media (max-width: 576px) {
+    .chat-header {
+        height: 50px;
+    }
+    
+    .welcome-screen h1 {
+        font-size: 1.5rem;
+    }
+    
+    .message {
+        padding: 15px 0;
+    }
+    
+    .message-avatar {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+    }
+    
+    .input-container {
+        border-radius: 6px;
+    }
+    
+    #user-input {
+        padding: 10px 40px 10px 12px;
+        font-size: 0.95rem;
+    }
+    
+    .send-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .model-selector {
+        width: 240px;
+        left: 20px;
+    }
+}
+
+/* Pour les très petits écrans */
+@media (max-width: 360px) {
+    .welcome-screen h1 {
+        font-size: 1.3rem;
+    }
+    
+    .welcome-screen p {
+        font-size: 0.9rem;
+    }
+    
+    .message-content {
+        font-size: 0.9rem;
+    }
+    
+    .disclaimer {
+        font-size: 10px;
+    }
+}
+
+/* Gestion de la hauteur pour les petits écrans */
+@media (max-height: 600px) {
+    .input-area {
+        min-height: auto;
+        padding-bottom: 10px;
+    }
+    
+    .welcome-screen {
+        padding: 10px;
+    }
+    
+    .welcome-screen h1 {
+        margin-bottom: 10px;
+    }
+}

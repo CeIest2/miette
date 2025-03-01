@@ -1,0 +1,273 @@
+/* chat.css - Styles spécifiques à la zone de chat */
+
+/* Zone principale du chat */
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--chat-bg);
+    position: relative;
+}
+
+/* En-tête de la zone de chat */
+.chat-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 16px;
+}
+
+.current-model {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.current-model:hover {
+    background-color: var(--btn-hover);
+}
+
+.model-name {
+    font-weight: 500;
+}
+
+/* Zone d'affichage des messages */
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 0;
+    position: relative;
+}
+
+/* Écran de bienvenue */
+.welcome-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.welcome-screen h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    background: linear-gradient(to right, #10a37f, #0d8c6d);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.welcome-screen p {
+    font-size: 1.1rem;
+    color: var(--text-light);
+    max-width: 600px;
+}
+
+/* Liste des messages */
+.messages-list {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Styles des messages */
+.message {
+    display: flex;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.message:last-child {
+    border-bottom: none;
+}
+
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    background-color: #5436da;
+    color: white;
+}
+
+.assistant-avatar {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.message-content {
+    flex: 1;
+    line-height: 1.6;
+}
+
+.user-message {
+    background-color: var(--user-message-bg);
+}
+
+.assistant-message {
+    background-color: var(--assistant-message-bg);
+}
+
+/* Animation de chargement pour les réponses */
+.loading-indicator {
+    display: flex;
+    gap: 8px;
+    padding: 10px 0;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--text-light);
+    border-radius: 50%;
+    animation: bounce 1.5s infinite ease-in-out;
+}
+
+.dot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-8px);
+    }
+}
+
+/* Zone de saisie du message */
+.input-area {
+    min-height: var(--input-height);
+    padding: 10px 20px 30px;
+    border-top: 1px solid var(--border-color);
+}
+
+.input-container {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+#user-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 50px 12px 16px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#user-input:focus {
+    outline: none;
+}
+
+.send-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-color);
+    color: white;
+    transition: background-color 0.2s;
+}
+
+.send-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.send-btn:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+}
+
+.disclaimer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 10px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Style pour le markdown dans les réponses */
+.markdown {
+    font-family: inherit;
+    line-height: 1.6;
+}
+
+.markdown p {
+    margin-bottom: 16px;
+}
+
+.markdown h1, .markdown h2, .markdown h3 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+
+.markdown code {
+    background-color: #f6f8fa;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.markdown pre {
+    background-color: #f6f8fa;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+}
+
+.markdown pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+.markdown ul, .markdown ol {
+    margin-bottom: 16px;
+    padding-left: 24px;
+}
+
+.markdown li {
+    margin-bottom: 4px;
+}
