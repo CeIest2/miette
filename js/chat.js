@@ -7,13 +7,16 @@
 function sendMessage(message) {
     // Cacher l'écran de bienvenue s'il est visible
     const welcomeScreen = document.querySelector('.welcome-screen');
-    if (welcomeScreen.style.display !== 'none') {
+    if (welcomeScreen && welcomeScreen.style.display !== 'none') {
         welcomeScreen.style.display = 'none';
     }
     
+    // Générer un ID unique pour ce message
+    const messageId = generateUniqueId();
+    
     // Ajouter le message utilisateur à l'interface et à la conversation
-    addMessageToUI('user', message);
-    addMessageToConversation('user', message);
+    addMessageToUI('user', message, messageId);
+    addMessageToThread('user', message, messageId);
     
     // Faire défiler jusqu'au bas de la zone de messages
     scrollToBottom();
@@ -21,35 +24,55 @@ function sendMessage(message) {
     // Afficher l'indicateur de chargement
     showLoadingIndicator();
     
-    // Envoyer la requête au serveur
-    getResponseFromBackend(message)
-        .then(response => {
-            // Cacher l'indicateur de chargement
-            hideLoadingIndicator();
-            
-            // Ajouter la réponse de l'assistant à l'interface et à la conversation
-            addMessageToUI('assistant', response);
-            addMessageToConversation('assistant', response);
-            
-            // Mettre à jour le titre de la conversation si c'est le premier échange
-            updateConversationTitle(message);
-            
-            // Mettre à jour la liste des conversations dans la barre latérale
-            updateConversationsList();
-            
-            // Faire défiler jusqu'au bas de la zone de messages
-            scrollToBottom();
-        })
-        .catch(error => {
-            // Cacher l'indicateur de chargement
-            hideLoadingIndicator();
-            
-            // Afficher un message d'erreur
-            addMessageToUI('assistant', "Désolé, une erreur est survenue lors de la communication avec le serveur.");
-            addMessageToConversation('assistant', "Désolé, une erreur est survenue lors de la communication avec le serveur.");
-            
-            console.error("Erreur lors de la communication avec le serveur:", error);
-        });
+    // Générer une réponse DIRECTEMENT, sans appel externe
+    const response = generateDirectResponse(message);
+    
+    // Cacher l'indicateur de chargement après un court délai pour l'UI
+    setTimeout(() => {
+        hideLoadingIndicator();
+        
+        // Générer un ID unique pour la réponse
+        const responseId = generateUniqueId();
+        
+        // Ajouter la réponse de l'assistant à l'interface et à la conversation
+        addMessageToUI('assistant', response, responseId);
+        addMessageToThread('assistant', response, responseId);
+        
+        // Mettre à jour le titre de la conversation si c'est le premier échange
+        updateConversationTitle(message);
+        
+        // Mettre à jour la liste des conversations dans la barre latérale
+        updateConversationsList();
+        
+        // Faire défiler jusqu'au bas de la zone de messages
+        scrollToBottom();
+    }, 10); // Délai minimal juste pour l'effet visuel
+}
+
+function generateDirectResponse(userMessage) {
+    // Convertir le message en minuscules pour faciliter la comparaison
+    const message = userMessage.toLowerCase();
+    
+    // Réponses pour différents types de questions
+    if (message.includes('bonjour') || message.includes('salut') || message.includes('hello')) {
+        return "Bonjour ! Comment puis-je vous aider aujourd'hui ?";
+    }
+    
+    if (message.includes('merci')) {
+        return "Je vous en prie ! N'hésitez pas si vous avez d'autres questions.";
+    }
+    
+    // Autres conditions existantes de votre code...
+    
+    // Réponses génériques par défaut
+    const genericResponses = [
+        "Je comprends votre question. Pourriez-vous me donner plus de détails ?",
+        "C'est une question intéressante. Dans un système réel, je pourrais vous donner une réponse plus détaillée.",
+        "Votre question est pertinente. Je serai heureux de vous aider davantage si vous précisez votre demande."
+    ];
+    
+    // Choisir une réponse générique aléatoire
+    return genericResponses[Math.floor(Math.random() * genericResponses.length)];
 }
 
 // Fonction qui communique avec le serveur backend
@@ -75,12 +98,13 @@ async function getResponseFromBackend(userMessage) {
     }
 }
 
-// Ajouter un message à la conversation courante (en mémoire)
-function addMessageToConversation(role, content) {
-    const currentConversation = getCurrentConversation();
+// Ajouter un message au thread courant
+function addMessageToThread(role, content, messageId) {
+    const currentThread = getCurrentThread();
     
-    if (currentConversation) {
-        currentConversation.messages.push({
+    if (currentThread) {
+        currentThread.messages.push({
+            id: messageId,
             role: role,
             content: content,
             timestamp: new Date().toISOString()
@@ -91,13 +115,20 @@ function addMessageToConversation(role, content) {
     }
 }
 
-// Ajouter un message à l'interface utilisateur
-function addMessageToUI(role, content) {
+// Ajouter un message à l'interface utilisateur (modifié pour les threads)
+function addMessageToUI(role, content, messageId) {
     const messagesContainer = document.querySelector('.messages-list');
     
-    // Créer l'élément de message
+    // Vérifier si le message existe déjà pour éviter les doublons
+    if (document.querySelector(`.message[data-message-id="${messageId}"]`)) {
+        console.log(`Message ${messageId} déjà affiché, éviter le doublon`);
+        return;
+    }
+    
+    // Créer l'élément principal du message
     const messageElement = document.createElement('div');
     messageElement.className = `message ${role}-message`;
+    messageElement.dataset.messageId = messageId;
     
     // Créer l'avatar
     const avatarElement = document.createElement('div');
@@ -110,23 +141,226 @@ function addMessageToUI(role, content) {
         avatarElement.innerHTML = '<i class="fas fa-robot"></i>';
     }
     
-    // Créer le contenu du message
+    // Créer le conteneur de contenu
     const contentElement = document.createElement('div');
     contentElement.className = 'message-content markdown';
     
-    // Formater le contenu (avec Markdown)
+    // Formater le contenu du message (avec Markdown)
     contentElement.innerHTML = formatMessageContent(content);
     
-    // Assembler les éléments
+    // Si c'est un message de l'assistant, ajouter le bouton pour créer un nouveau thread
+    if (role === 'assistant') {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'message-actions';
+        
+        const newThreadBtn = document.createElement('button');
+        newThreadBtn.className = 'new-thread-btn';
+        newThreadBtn.innerHTML = '<i class="fas fa-code-branch"></i> Nouveau fil';
+        newThreadBtn.addEventListener('click', () => {
+            // Créer un nouveau thread à partir de ce message
+            const newThreadId = createNewThread(messageId);
+            
+            // Si la création a réussi, ajouter un visuel pour ce thread
+            if (newThreadId) {
+                addThreadTagToMessage(messageId, newThreadId);
+            }
+        });
+        
+        actionsDiv.appendChild(newThreadBtn);
+        contentElement.appendChild(actionsDiv);
+    }
+    
+    // Si des threads existent pour ce message, ajouter la liste des threads
+    const currentConversation = getCurrentConversation();
+    if (currentConversation && role === 'assistant') {
+        // Chercher des threads qui ont ce message comme parent
+        let threadsFromThisMessage = [];
+        
+        // Vérifier si la structure threads existe
+        if (currentConversation.threads) {
+            // Parcourir tous les threads de la conversation
+            Object.values(currentConversation.threads).forEach(thread => {
+                if (thread.parentMessageId === messageId) {
+                    threadsFromThisMessage.push(thread);
+                }
+            });
+        }
+        
+        if (threadsFromThisMessage.length > 0) {
+            const threadListElement = document.createElement('div');
+            threadListElement.className = 'thread-list';
+            
+            // Ajouter un tag pour chaque thread
+            threadsFromThisMessage.forEach(thread => {
+                const threadTag = document.createElement('span');
+                threadTag.className = 'thread-tag';
+                if (thread.id === appState.currentThreadId) {
+                    threadTag.classList.add('active');
+                }
+                threadTag.textContent = thread.title || `Thread ${thread.id.slice(0, 4)}`;
+                threadTag.dataset.threadId = thread.id;
+                
+                // Ajouter l'événement pour basculer vers ce thread
+                threadTag.addEventListener('click', () => {
+                    switchToThread(thread.id);
+                });
+                
+                threadListElement.appendChild(threadTag);
+            });
+            
+            contentElement.appendChild(threadListElement);
+        }
+    }
+    
+    // Assembler le message
     messageElement.appendChild(avatarElement);
     messageElement.appendChild(contentElement);
     
     // Ajouter le message à la liste
     messagesContainer.appendChild(messageElement);
+    
+    // Déboguer
+    console.log(`Message ajouté: ${role} (ID: ${messageId})`);
 }
 
-// Le reste du fichier reste identique...
-// (fonctions formatMessageContent, showLoadingIndicator, hideLoadingIndicator, etc.)
+function addThreadTagToMessage(messageId, threadId) {
+    // Trouver le message
+    const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (!messageElement) {
+        console.error(`Message avec ID ${messageId} introuvable`);
+        return;
+    }
+    
+    // Trouver ou créer la liste des threads
+    let threadList = messageElement.querySelector('.thread-list');
+    if (!threadList) {
+        threadList = document.createElement('div');
+        threadList.className = 'thread-list';
+        messageElement.querySelector('.message-content').appendChild(threadList);
+    }
+    
+    // Créer le tag
+    const threadTag = document.createElement('span');
+    threadTag.className = 'thread-tag active'; // Active car c'est le thread nouvellement créé
+    
+    // Obtenir les informations du thread
+    const currentConversation = getCurrentConversation();
+    const thread = currentConversation.threads[threadId];
+    
+    threadTag.textContent = thread ? (thread.title || `Thread ${threadId.slice(0, 4)}`) : `Thread ${threadId.slice(0, 4)}`;
+    threadTag.dataset.threadId = threadId;
+    
+    // Ajouter l'événement pour basculer vers ce thread
+    threadTag.addEventListener('click', () => {
+        switchToThread(threadId);
+    });
+    
+    // Ajouter à la liste
+    threadList.appendChild(threadTag);
+}
+
+// Ajouter une référence visuelle au message parent
+function addThreadReferenceToUI(parentMessage, parentThreadId) {
+    const messagesContainer = document.querySelector('.messages-list');
+    
+    // Créer l'élément de référence
+    const referenceElement = document.createElement('div');
+    referenceElement.className = 'thread-indicator';
+    
+    // Ajouter l'indicateur de chemin
+    const pathElement = document.createElement('div');
+    pathElement.className = 'thread-path';
+    pathElement.innerHTML = `
+        <span>En réponse à: </span>
+        <span class="parent-message-preview">${truncateText(parentMessage.content, 40)}</span>
+    `;
+    
+    // Ajouter un bouton pour revenir au thread parent
+    const backButton = document.createElement('button');
+    backButton.className = 'back-to-parent-btn';
+    backButton.innerHTML = '<i class="fas fa-arrow-left"></i> Revenir';
+    backButton.addEventListener('click', () => {
+        switchToThread(parentThreadId);
+    });
+    
+    referenceElement.appendChild(pathElement);
+    referenceElement.appendChild(backButton);
+    
+    // Insérer la référence au début de la liste de messages
+    messagesContainer.prepend(referenceElement);
+}
+
+// Ajouter un tag visuel pour un thread créé à partir d'un message
+function addThreadTagToMessage(messageId) {
+    const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (!messageElement) return;
+    
+    // Vérifier si une liste de threads existe déjà
+    let threadList = messageElement.querySelector('.thread-list');
+    if (!threadList) {
+        threadList = document.createElement('div');
+        threadList.className = 'thread-list';
+        messageElement.querySelector('.message-content').appendChild(threadList);
+    }
+    
+    // Obtenir le thread nouvellement créé
+    const currentThread = getCurrentThread();
+    if (!currentThread) return;
+    
+    // Créer le tag
+    const threadTag = document.createElement('span');
+    threadTag.className = 'thread-tag active'; // Active car c'est le thread courant
+    threadTag.textContent = currentThread.title || `Thread ${currentThread.id.slice(0, 4)}`;
+    threadTag.dataset.threadId = currentThread.id;
+    
+    // Ajouter l'événement pour basculer vers ce thread
+    threadTag.addEventListener('click', () => {
+        switchToThread(currentThread.id);
+    });
+    
+    // Ajouter à la liste
+    threadList.appendChild(threadTag);
+}
+
+// Mettre à jour l'indicateur de thread actif
+function updateThreadIndicator() {
+    // Supprimer l'indicateur existant s'il y en a un
+    const existingIndicator = document.querySelector('.thread-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    // Obtenir le thread actuel
+    const currentThread = getCurrentThread();
+    if (!currentThread || !currentThread.parentId) return; // Ne rien faire pour le thread principal
+    
+    // Obtenir le message parent
+    const currentConversation = getCurrentConversation();
+    const parentThread = currentConversation.threads[currentThread.parentId];
+    const parentMessage = parentThread.messages.find(msg => msg.id === currentThread.parentMessageId);
+    
+    if (parentMessage) {
+        // Ajouter la référence
+        addThreadReferenceToUI(parentMessage, currentThread.parentId);
+    }
+    
+    // Mettre à jour les tags de thread pour indiquer lequel est actif
+    document.querySelectorAll('.thread-tag').forEach(tag => {
+        if (tag.dataset.threadId === currentThread.id) {
+            tag.classList.add('active');
+        } else {
+            tag.classList.remove('active');
+        }
+    });
+}
+
+// Fonction utilitaire pour tronquer du texte
+function truncateText(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+
 
 // Formater le contenu d'un message (avec support Markdown simplifié)
 function formatMessageContent(content) {

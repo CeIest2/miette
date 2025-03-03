@@ -7,6 +7,7 @@
 const appState = {
     conversations: [], // Liste des conversations
     currentConversationId: null, // ID de la conversation actuelle
+    currentThreadId: null, // ID du thread actuel
     isModelSelectorOpen: false, // État du sélecteur de modèle
     currentModel: 'Assistant Standard', // Modèle actuel
     isMobile: window.innerWidth < 768, // Détection des appareils mobiles
@@ -40,15 +41,27 @@ function initApp() {
 
 // Création d'une nouvelle conversation
 function createNewConversation() {
+    const mainThreadId = generateUniqueId();
+    
     const newConversation = {
         id: generateUniqueId(),
         title: 'Nouvelle conversation',
-        messages: [],
+        threads: {
+            // Thread principal
+            [mainThreadId]: {
+                id: mainThreadId,
+                parentId: null, // Le thread principal n'a pas de parent
+                messages: [],
+                childThreads: [] // Liste des IDs des threads enfants
+            }
+        },
+        mainThreadId: mainThreadId, // Référence au thread principal
         createdAt: new Date().toISOString()
     };
     
     appState.conversations.push(newConversation);
     appState.currentConversationId = newConversation.id;
+    appState.currentThreadId = mainThreadId;
     
     // Mettre à jour la liste des conversations dans l'interface
     updateConversationsList();
@@ -62,20 +75,120 @@ function createNewConversation() {
     return newConversation;
 }
 
+// Fonction pour créer un nouveau thread
+function createNewThread(parentMessageId) {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation) return;
+    
+    const parentThread = getThreadById(appState.currentThreadId);
+    if (!parentThread) return;
+    
+    // Créer le nouveau thread
+    const newThreadId = generateUniqueId();
+    
+    // Ajouter le thread à la conversation
+    currentConversation.threads[newThreadId] = {
+        id: newThreadId,
+        parentId: appState.currentThreadId, // Le parent est le thread actuel
+        parentMessageId: parentMessageId, // ID du message auquel ce thread répond
+        messages: [],
+        childThreads: [],
+        title: `Thread ${newThreadId.slice(0, 4)}`
+    };
+    
+    // Ajouter le thread enfant au thread parent
+    parentThread.childThreads.push(newThreadId);
+    
+    // Définir comme thread actuel
+    appState.currentThreadId = newThreadId;
+    
+    // Mettre à jour l'interface
+    updateUI();
+    
+    // Sauvegarder dans le localStorage
+    saveToLocalStorage();
+    
+    return newThreadId;
+}
+
+// Obtenir le thread actuel
+function getCurrentThread() {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation) return null;
+    
+    return currentConversation.threads[appState.currentThreadId];
+}
+
+// Obtenir un thread par son ID
+function getThreadById(threadId) {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation) return null;
+    
+    return currentConversation.threads[threadId];
+}
+
+// Basculer vers un thread spécifique
+function switchToThread(threadId) {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation || !currentConversation.threads[threadId]) return;
+    
+    appState.currentThreadId = threadId;
+    
+    // Mettre à jour l'interface pour afficher les messages du thread
+    displayThreadMessages(threadId);
+    
+    // Mettre à jour l'indicateur de thread actif
+    updateThreadIndicator();
+}
+
+// Afficher les messages d'un thread spécifique
+function displayThreadMessages(threadId) {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation) return;
+    
+    const thread = currentConversation.threads[threadId];
+    if (!thread) return;
+    
+    // Effacer la zone de messages
+    clearMessages();
+    
+    // Afficher les messages du thread
+    thread.messages.forEach(message => {
+        addMessageToUI(message.role, message.content, message.id);
+    });
+    
+    // Si le thread a un parent, afficher le message parent en tant que référence
+    if (thread.parentId && thread.parentMessageId) {
+        const parentThread = currentConversation.threads[thread.parentId];
+        const parentMessage = parentThread.messages.find(msg => msg.id === thread.parentMessageId);
+        
+        if (parentMessage) {
+            // Ajouter une référence au message parent en haut du thread
+            addThreadReferenceToUI(parentMessage, thread.parentId);
+        }
+    }
+}
+
 // Changer de conversation
 function switchToConversation(conversationId) {
     appState.currentConversationId = conversationId;
     
-    // Mettre à jour l'interface utilisateur
-    clearMessages();
-    
     // Obtenir la conversation actuelle
     const currentConversation = getCurrentConversation();
     
-    // Charger les messages de la conversation
-    if (currentConversation && currentConversation.messages.length > 0) {
-        currentConversation.messages.forEach(message => {
-            addMessageToUI(message.role, message.content);
+    // Définir le thread principal comme thread actuel
+    if (currentConversation && currentConversation.mainThreadId) {
+        appState.currentThreadId = currentConversation.mainThreadId;
+    }
+    
+    // Mettre à jour l'interface utilisateur
+    clearMessages();
+    
+    // Charger les messages du thread principal
+    const mainThread = getCurrentThread();
+    if (mainThread && mainThread.messages.length > 0) {
+        mainThread.messages.forEach(message => {
+            addMessageToUI(message.role, message.content, message.id);
         });
         
         // Cacher l'écran de bienvenue
@@ -87,6 +200,11 @@ function switchToConversation(conversationId) {
     
     // Mettre à jour la liste des conversations (pour mettre en évidence la conversation active)
     updateConversationsList();
+    
+    // Mettre à jour le visualiseur de threads si disponible
+    if (typeof updateThreadVisualizer === 'function') {
+        updateThreadVisualizer();
+    }
     
     // Fermer la barre latérale sur mobile après avoir changé de conversation
     if (appState.isMobile && appState.isSidebarOpen) {
@@ -257,6 +375,7 @@ function saveToLocalStorage() {
     localStorage.setItem('chatApp', JSON.stringify({
         conversations: appState.conversations,
         currentConversationId: appState.currentConversationId,
+        currentThreadId: appState.currentThreadId, // Ajouter le thread actuel
         currentModel: appState.currentModel
     }));
 }
@@ -268,8 +387,41 @@ function loadFromLocalStorage() {
     if (savedState) {
         const parsedState = JSON.parse(savedState);
         
-        appState.conversations = parsedState.conversations || [];
+        // Vérifier si les conversations ont déjà la structure de threads
+        const conversations = parsedState.conversations || [];
+        
+        // Mettre à jour les conversations pour qu'elles aient la structure de threads si nécessaire
+        appState.conversations = conversations.map(conv => {
+            if (!conv.threads) {
+                // Convertir l'ancienne structure vers la nouvelle
+                const mainThreadId = generateUniqueId();
+                return {
+                    ...conv,
+                    threads: {
+                        [mainThreadId]: {
+                            id: mainThreadId,
+                            parentId: null,
+                            messages: conv.messages || [],
+                            childThreads: []
+                        }
+                    },
+                    mainThreadId: mainThreadId
+                };
+            }
+            return conv;
+        });
+        
         appState.currentConversationId = parsedState.currentConversationId;
+        appState.currentThreadId = parsedState.currentThreadId;
+        
+        // Si pas de thread actif, utiliser le thread principal de la conversation active
+        if (!appState.currentThreadId && appState.currentConversationId) {
+            const currentConv = appState.conversations.find(c => c.id === appState.currentConversationId);
+            if (currentConv && currentConv.mainThreadId) {
+                appState.currentThreadId = currentConv.mainThreadId;
+            }
+        }
+        
         appState.currentModel = parsedState.currentModel || 'Assistant Standard';
         
         // Mettre à jour le modèle affiché

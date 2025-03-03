@@ -195,3 +195,172 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Autres initialisations d'interface...
 });
+
+
+
+function createThreadVisualizer() {
+    // Vérifier si le visualiseur existe déjà
+    let visualizer = document.querySelector('.thread-visualizer');
+    
+    if (!visualizer) {
+        visualizer = createElement('div', 'thread-visualizer');
+        
+        // Styles pour le visualiseur
+        visualizer.style.position = 'fixed';
+        visualizer.style.bottom = '20px';
+        visualizer.style.right = '20px';
+        visualizer.style.backgroundColor = 'var(--chat-bg)';
+        visualizer.style.borderRadius = '6px';
+        visualizer.style.boxShadow = '0 2px 10px var(--shadow-color)';
+        visualizer.style.padding = '10px';
+        visualizer.style.zIndex = '100';
+        visualizer.style.maxWidth = '300px';
+        visualizer.style.display = 'none'; // Caché par défaut
+        
+        // Bouton pour ouvrir/fermer
+        const toggleButton = createElement('button', 'toggle-visualizer-btn');
+        toggleButton.innerHTML = '<i class="fas fa-sitemap"></i>';
+        toggleButton.style.position = 'fixed';
+        toggleButton.style.bottom = '20px';
+        toggleButton.style.right = '20px';
+        toggleButton.style.width = '40px';
+        toggleButton.style.height = '40px';
+        toggleButton.style.borderRadius = '50%';
+        toggleButton.style.backgroundColor = 'var(--primary-color)';
+        toggleButton.style.color = 'white';
+        toggleButton.style.border = 'none';
+        toggleButton.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+        toggleButton.style.zIndex = '101';
+        toggleButton.style.display = 'flex';
+        toggleButton.style.justifyContent = 'center';
+        toggleButton.style.alignItems = 'center';
+        
+        // Ajouter l'événement pour ouvrir/fermer
+        toggleButton.addEventListener('click', () => {
+            if (visualizer.style.display === 'none') {
+                visualizer.style.display = 'block';
+                updateThreadVisualizer();
+            } else {
+                visualizer.style.display = 'none';
+            }
+        });
+        
+        document.body.appendChild(toggleButton);
+        document.body.appendChild(visualizer);
+    }
+    
+    return visualizer;
+}
+
+// Mettre à jour le visualiseur avec l'arborescence actuelle
+function updateThreadVisualizer() {
+    const visualizer = document.querySelector('.thread-visualizer');
+    if (!visualizer) return;
+    
+    // Vider le visualiseur
+    visualizer.innerHTML = '';
+    
+    // Ajouter le titre
+    const title = createElement('h3', 'visualizer-title');
+    title.textContent = 'Structure des fils de discussion';
+    title.style.margin = '0 0 10px 0';
+    title.style.fontSize = '14px';
+    visualizer.appendChild(title);
+    
+    // Obtenir la conversation courante
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation) return;
+    
+    // Créer l'arborescence
+    const treeContainer = createElement('div', 'thread-tree');
+    
+    // Commencer par le thread principal
+    const mainThreadId = currentConversation.mainThreadId;
+    const threadNode = createThreadNode(mainThreadId, 0);
+    treeContainer.appendChild(threadNode);
+    
+    visualizer.appendChild(treeContainer);
+}
+
+// Créer un nœud pour représenter un thread dans l'arborescence
+function createThreadNode(threadId, level) {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation) return null;
+    
+    const thread = currentConversation.threads[threadId];
+    if (!thread) return null;
+    
+    // Créer le conteneur pour ce nœud
+    const nodeContainer = createElement('div', 'thread-node-container');
+    nodeContainer.style.paddingLeft = `${level * 20}px`;
+    nodeContainer.style.marginBottom = '5px';
+    
+    // Créer le nœud
+    const node = createElement('div', 'thread-node');
+    node.style.display = 'flex';
+    node.style.alignItems = 'center';
+    node.style.padding = '5px';
+    node.style.borderRadius = '4px';
+    node.style.cursor = 'pointer';
+    node.style.backgroundColor = threadId === appState.currentThreadId ? 
+                              'rgba(16, 163, 127, 0.2)' : 'transparent';
+    
+    // Label du thread
+    const label = createElement('span', 'thread-label');
+    label.textContent = thread.title || `Thread ${thread.id.slice(0, 4)}`;
+    label.style.fontSize = '13px';
+    
+    // Ajouter l'événement pour basculer vers ce thread
+    node.addEventListener('click', () => {
+        switchToThread(threadId);
+        updateThreadVisualizer();
+    });
+    
+    node.appendChild(label);
+    nodeContainer.appendChild(node);
+    
+    // Ajouter les threads enfants de manière récursive
+    if (thread.childThreads && thread.childThreads.length > 0) {
+        const childrenContainer = createElement('div', 'thread-children');
+        
+        thread.childThreads.forEach(childId => {
+            const childNode = createThreadNode(childId, level + 1);
+            if (childNode) {
+                childrenContainer.appendChild(childNode);
+            }
+        });
+        
+        nodeContainer.appendChild(childrenContainer);
+    }
+    
+    return nodeContainer;
+}
+
+// Observer les changements de threads et mettre à jour le visualiseur
+function setupThreadObserver() {
+    // Créer le visualiseur s'il n'existe pas
+    createThreadVisualizer();
+    
+    // Configuration de l'observateur - surveiller les changements dans les messages
+    const messagesContainer = document.querySelector('.messages-list');
+    const config = { childList: true, subtree: true };
+    
+    // Fonction appelée à chaque mutation
+    const callback = function(mutationsList, observer) {
+        // Si le visualiseur est visible, le mettre à jour
+        const visualizer = document.querySelector('.thread-visualizer');
+        if (visualizer && visualizer.style.display !== 'none') {
+            updateThreadVisualizer();
+        }
+    };
+    
+    // Créer et lancer l'observateur
+    const observer = new MutationObserver(callback);
+    observer.observe(messagesContainer, config);
+}
+
+// Initialiser les fonctionnalités d'interface pour les threads au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialiser le visualiseur de threads
+    setupThreadObserver();
+});

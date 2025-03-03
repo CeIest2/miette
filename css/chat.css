@@ -79,50 +79,210 @@
     padding: 0 20px;
 }
 
-/* Styles des messages */
+/* ===== STYLES DES MESSAGES ET AVATARS ===== */
+
+/* Style de base pour tous les messages */
 .message {
     display: flex;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border-color);
+    padding: 15px 0;
+    margin-bottom: 15px;
+    position: relative; /* Important pour le positionnement des avatars */
 }
 
-.message:last-child {
-    border-bottom: none;
+/* Style pour les messages de l'utilisateur et l'alignement */
+.user-message {
+    justify-content: flex-end; /* Aligner le message utilisateur à droite */
 }
 
-.message-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 16px;
-    flex-shrink: 0;
-}
-
-.user-avatar {
-    background-color: #5436da;
-    color: white;
-}
-
-.assistant-avatar {
-    background-color: var(--primary-color);
-    color: white;
-}
-
+/* Style du contenu des messages */
 .message-content {
     flex: 1;
     line-height: 1.6;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    max-width: 75%; /* Largeur maximale plus réduite pour une meilleure apparence */
 }
 
-.user-message {
-    background-color: var(--user-message-bg);
+/* Style pour le contenu des messages de l'assistant */
+.assistant-message .message-content {
+    background-color: #f0f7f4;
+    border: 1px solid #d7e8e0;
+    margin-right: auto; /* Aligné à gauche */
+    margin-left: 50px; /* Espace pour l'avatar */
 }
 
-.assistant-message {
-    background-color: var(--assistant-message-bg);
+/* Style pour le contenu des messages de l'utilisateur */
+.user-message .message-content {
+    background-color: #e9f5ff;
+    border: 1px solid #d1e7ff;
+    margin-left: auto; /* Aligné à droite */
+    margin-right: 50px; /* Espace pour l'avatar */
 }
+
+/* Styles pour les avatars */
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%; /* Avatar rond */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute; /* Positionnement absolu */
+    top: 15px; /* Aligné avec le haut du message */
+    color: white;
+    z-index: 2; /* Au-dessus du contenu */
+}
+
+/* Position de l'avatar pour l'assistant (à gauche) */
+.assistant-message .message-avatar {
+    left: 5px;
+    background-color: var(--primary-color);
+}
+
+/* Position de l'avatar pour l'utilisateur (à droite) */
+.user-message .message-avatar {
+    right: 5px;
+    background-color: #5436da;
+}
+
+/* ===== STYLES POUR LES THREADS ET ACTIONS ===== */
+
+/* Bouton pour créer un nouveau thread */
+.new-thread-btn {
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.new-thread-btn:hover {
+    background-color: rgba(16, 163, 127, 0.1);
+}
+
+/* Zone des actions de message */
+.message-actions {
+    margin-top: 10px;
+    text-align: left; /* Toujours aligné à gauche, même pour l'utilisateur */
+}
+
+/* Liste des threads disponibles pour un message */
+.thread-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    text-align: left; /* Toujours aligné à gauche */
+}
+
+/* Style des tags de thread */
+.thread-tag {
+    background-color: rgba(16, 163, 127, 0.1);
+    border: 1px solid rgba(16, 163, 127, 0.2);
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.thread-tag:hover {
+    background-color: rgba(16, 163, 127, 0.2);
+}
+
+.thread-tag.active {
+    background-color: rgba(16, 163, 127, 0.3);
+    border-color: var(--primary-color);
+}
+
+/* Indicateur de thread */
+.thread-indicator {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.thread-indicator .thread-path {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.thread-indicator .separator {
+    color: var(--text-light);
+}
+
+/* Bouton pour revenir au parent */
+.back-to-parent-btn {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.back-to-parent-btn:hover {
+    background-color: var(--btn-hover);
+}
+
+/* Conteneur de thread de conversation */
+.thread-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+/* Style pour les messages dans un thread */
+.thread {
+    margin-left: 20px;
+    border-left: 2px solid var(--border-color);
+    padding-left: 15px;
+    margin-top: 10px;
+}
+
+/* Animation pour transitions de threads */
+.thread-transition-enter {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.thread-transition-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.thread-transition-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.thread-transition-exit-active {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+/* ===== ANIMATION DE CHARGEMENT ===== */
 
 /* Animation de chargement pour les réponses */
 .loading-indicator {
@@ -160,7 +320,8 @@
     }
 }
 
-/* Zone de saisie du message */
+/* ===== ZONE DE SAISIE DU MESSAGE ===== */
+
 .input-area {
     min-height: var(--input-height);
     padding: 10px 20px 30px;
@@ -227,6 +388,8 @@
     margin-left: auto;
     margin-right: auto;
 }
+
+/* ===== STYLES MARKDOWN ===== */
 
 /* Style pour le markdown dans les réponses */
 .markdown {
