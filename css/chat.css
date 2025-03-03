@@ -86,22 +86,23 @@
     display: flex;
     padding: 15px 0;
     margin-bottom: 15px;
-    position: relative; /* Important pour le positionnement des avatars */
+
+    position: relative;
 }
 
 /* Style pour les messages de l'utilisateur et l'alignement */
 .user-message {
     justify-content: flex-end; /* Aligner le message utilisateur à droite */
 }
-
 /* Style du contenu des messages */
 .message-content {
     flex: 1;
     line-height: 1.6;
-    padding: 15px;
+    padding: 40px 15px 15px 50px; /* Augmenter le padding gauche pour l'avatar */
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    max-width: 75%; /* Largeur maximale plus réduite pour une meilleure apparence */
+    max-width: 75%;
+    position: relative; /* Important pour positionner l'avatar à l'intérieur */
 }
 
 /* Style pour le contenu des messages de l'assistant */
@@ -109,7 +110,7 @@
     background-color: #f0f7f4;
     border: 1px solid #d7e8e0;
     margin-right: auto; /* Aligné à gauche */
-    margin-left: 50px; /* Espace pour l'avatar */
+    padding-left: 50px; /* Espace pour l'avatar */
 }
 
 /* Style pour le contenu des messages de l'utilisateur */
@@ -117,7 +118,8 @@
     background-color: #e9f5ff;
     border: 1px solid #d1e7ff;
     margin-left: auto; /* Aligné à droite */
-    margin-right: 50px; /* Espace pour l'avatar */
+    padding-right: 50px; /* Espace pour l'avatar à droite */
+    padding-left: 15px; /* Rétablir le padding gauche normal */
 }
 
 /* Styles pour les avatars */
@@ -128,7 +130,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute; /* Positionnement absolu */
+    position: absolute; /* Positionnement absolu mais relatif au conteneur du message */
     top: 15px; /* Aligné avec le haut du message */
     color: white;
     z-index: 2; /* Au-dessus du contenu */
@@ -136,13 +138,13 @@
 
 /* Position de l'avatar pour l'assistant (à gauche) */
 .assistant-message .message-avatar {
-    left: 5px;
+    left: 15px; /* Position à l'intérieur de la bordure du message */
     background-color: var(--primary-color);
 }
 
 /* Position de l'avatar pour l'utilisateur (à droite) */
 .user-message .message-avatar {
-    right: 5px;
+    right: 15px; /* Position à l'intérieur de la bordure du message */
     background-color: #5436da;
 }
 
