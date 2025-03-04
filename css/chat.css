@@ -46,16 +46,6 @@
     position: relative;
 }
 
-/* Écran de bienvenue */
-.welcome-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    text-align: center;
-    padding: 0 20px;
-}
 
 .welcome-screen h1 {
     font-size: 2.5rem;
@@ -132,25 +122,6 @@
     animation: thread-fade-out 0.3s forwards;
 }
 
-.create-thread-btn {
-    position: absolute;
-    right: -40px;
-    top: 20px;
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    background-color: var(--primary-color);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.2s, opacity 0.2s;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    opacity: 0; /* Caché par défaut */
-}
-
 .create-thread-btn:hover {
     background-color: var(--primary-hover);
     transform: scale(1.05);
@@ -159,10 +130,6 @@
 /* Style pour les messages de l'utilisateur et l'alignement */
 .user-message {
     position: relative;
-}
-
-.user-message:hover .create-thread-btn {
-    opacity: 1;
 }
 
 
@@ -366,23 +333,8 @@
     color: var(--text-color);
 }
 
-/* Bouton pour revenir au parent */
-.back-to-parent-btn {
-    background-color: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 4px 8px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
 
-.back-to-parent-btn:hover {
-    background-color: var(--btn-hover);
-}
+
 
 /* Conteneur de thread de conversation */
 .thread-container {
@@ -591,24 +543,6 @@
     margin-bottom: 4px;
 }
 
-.thread-reference {
-    background-color: var(--assistant-message-bg);
-    border: 1px solid #d7e8e0;
-    border-radius: 8px 0 0 8px;
-    padding: 10px;
-    margin-bottom: 15px;
-    position: relative;
-    max-width: 250px;
-    font-size: 0.9em;
-    color: var(--text-light);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .thread-reference:hover {
     background-color: #e8f4ef;
 }
@@ -629,41 +563,224 @@
     border-color: transparent transparent transparent #e8f4ef;
 }
 
-/* Zone de saisie spécifique au nouveau thread */
-.new-thread-input-area {
+
+
+
+.new-thread-input:focus {
+    outline: none;
+}
+
+
+/* Animation pour la transition vers le mode thread */
+.thread-fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.thread-fade-in {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeIn 0.3s forwards;
+    animation-delay: 0.2s;
+}
+
+
+/* Style pour les indicateurs de thread */
+.thread-indicator-list {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 3px 0;
+}
+
+.thread-indicator-item {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background-color: var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.thread-indicator-item:hover {
+    transform: scale(1.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.thread-indicator-item[data-active="true"] {
+    background-color: var(--primary-color);
+}
+
+/* Style pour les messages dans un thread actif */
+.active-thread-message {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 10px !important;
+    background-color: rgba(16, 163, 127, 0.05);
+    border-radius: 2px 12px 12px 2px;
+}
+
+/* Animation pour la transition entre threads */
+@keyframes message-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-appear {
+    animation: message-fade-in 0.3s forwards;
+}
+
+/* Style pour le bouton de création de thread */
+.create-thread-btn {
+    position: absolute;
+    right: -40px;
+    top: 20px;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s, opacity 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    z-index: 10;
+}
+
+.user-message:hover .create-thread-btn {
+    opacity: 1;
+}
+
+.create-thread-btn:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+/* Style pour le tag de branche */
+.branch-tag {
+    display: inline-flex;
+    align-items: center;
+    position: absolute;
+    left: -5px;
+    top: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transform: rotate(-90deg) translateX(-100%);
+    transform-origin: left top;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 5;
+}
+
+/* Styles améliorés pour l'indicateur de thread actif */
+.thread-tag.active::before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    box-shadow: 0 0 4px rgba(16, 163, 127, 0.5);
+}
+
+/* Style de la zone de bienvenue */
+.welcome-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 20px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.welcome-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Style du conteneur de création de thread */
+.thread-creation-mode {
     max-width: 800px;
     margin: 0 auto;
-    padding: 15px 20px;
-    border-radius: 8px;
+    padding: 20px;
     background-color: var(--bg-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-top: 20px;
-    margin-bottom: 20px;
-    display: none; /* Masqué par défaut */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    animation: thread-fade-in 0.3s forwards;
+}
+
+@keyframes thread-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Style de la référence au message parent */
+.thread-reference {
+    background-color: var(--chat-bg);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.thread-reference:hover {
+    background-color: rgba(16, 163, 127, 0.05);
+}
+
+/* Style de la zone de saisie de nouveau thread */
+.new-thread-input-area {
+    margin-top: 15px;
 }
 
 .new-thread-input-container {
     position: relative;
-    display: flex;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: var(--chat-bg);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .new-thread-input {
-    flex: 1;
+    width: 100%;
+    padding: 12px 40px 12px 12px;
     border: none;
-    background: transparent;
-    padding: 12px 50px 12px 16px;
-    font-size: 1rem;
-    font-family: inherit;
     resize: none;
     min-height: 60px;
     max-height: 200px;
-    overflow-y: auto;
-}
-
-.new-thread-input:focus {
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
     outline: none;
 }
 
@@ -693,41 +810,117 @@
     cursor: not-allowed;
 }
 
-/* Conteneur pour le nouveau mode thread */
-.thread-creation-mode {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: none; /* Masqué par défaut */
-}
-
-/* Animation pour la transition vers le mode thread */
-.thread-fade-out {
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: opacity 0.3s, transform 0.3s;
-}
-
-.thread-fade-in {
-    opacity: 0;
-    transform: translateY(10px);
-    animation: fadeIn 0.3s forwards;
-    animation-delay: 0.2s;
-}
-
-/* Style pour le bouton d'annulation */
 .cancel-thread-btn {
-    background-color: transparent;
+    margin-top: 10px;
+    padding: 8px 15px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 5px 10px;
-    margin-top: 10px;
-    font-size: 0.9em;
+    background-color: transparent;
     color: var(--text-light);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
+    display: block;
+    margin-left: auto;
 }
 
 .cancel-thread-btn:hover {
     background-color: var(--btn-hover);
+    color: var(--text-color);
+}
+
+/* Style pour améliorer le bouton "Revenir" */
+.back-to-parent-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background-color: rgba(16, 163, 127, 0.1);
+    color: var(--primary-color);
+    font-size: 0.85em;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.back-to-parent-btn:hover {
+    background-color: rgba(16, 163, 127, 0.2);
+    transform: translateX(-2px);
+}
+
+/* Style pour visualiser les branches de conversation */
+.branch-visualizer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--chat-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    max-width: 300px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+}
+
+.branch-visualizer-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.branch-tree {
+    margin-left: 5px;
+}
+
+.branch-node {
+    padding: 5px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+}
+
+.branch-node:hover {
+    background-color: rgba(16, 163, 127, 0.05);
+}
+
+.branch-node.active {
+    background-color: rgba(16, 163, 127, 0.1);
+    font-weight: 500;
+}
+
+.branch-children {
+    margin-left: 15px;
+    padding-left: 5px;
+    border-left: 1px dashed var(--border-color);
+}
+
+/* Style pour le bouton d'affichage du visualiseur de branches */
+.toggle-branch-visualizer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 101;
+    transition: all 0.2s;
+}
+
+.toggle-branch-visualizer:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
 }
