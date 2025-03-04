@@ -84,15 +84,15 @@ function hideAllMessagesExcept(threadId) {
     const thread = currentConversation.threads[threadId];
     if (!thread) return;
     
-    // ÉTAPE 1: Déterminer quels messages sont pertinents pour ce thread
-    // Pour cela, on construit d'abord le chemin du thread actuel jusqu'au thread principal
+    // ÉTAPE 1: Déterminer le chemin complet du thread
     const threadPath = ThreadAPI.getPath(threadId);
     const relevantThreadIds = threadPath.map(t => t.id);
     
-    // Nous avons aussi besoin de savoir à partir de quel message ce thread a été créé
-    const branchingPointMessageId = thread.parentId ? thread.parentMessageId : null;
+    // Obtenir le point de branchement
+    const branchingPointMessageId = thread.parentMessageId;
+    const parentThreadId = thread.parentId;
     
-    // ÉTAPE 2: Masquer d'abord tous les messages pour les réinitialiser
+    // ÉTAPE 2: Masquer tous les messages pour réinitialiser
     document.querySelectorAll('.messages-list > .message').forEach(msg => {
         msg.classList.add('hidden');
         msg.style.display = 'none';
@@ -103,7 +103,6 @@ function hideAllMessagesExcept(threadId) {
     
     // ÉTAPE 4: Si c'est le thread principal, afficher tous ses messages
     if (threadId === currentConversation.mainThreadId) {
-        // Afficher tous les messages du thread principal
         const mainThreadMessages = currentConversation.threads[currentConversation.mainThreadId].messages;
         const mainThreadMessageIds = mainThreadMessages.map(msg => msg.id);
         
@@ -118,72 +117,49 @@ function hideAllMessagesExcept(threadId) {
         return;
     }
     
-    // ÉTAPE 5: Pour les threads non-principaux, nous devons afficher:
-    // a. Tous les messages du thread parent jusqu'au point de branchement
-    // b. Puis tous les messages du thread actuel
+    // ÉTAPE 5: Pour les threads non-principaux, nous affichons:
+    // a. Tous les messages du thread parent jusqu'au point de branchement (inclus)
+    // b. Tous les messages du thread actuel
     
-    // D'abord, identifions tous les messages pertinents dans la chaîne de threads
+    // Collecter tous les messages pertinents
     const relevantMessageIds = new Set();
-    let foundBranchingPoint = false;
     
-    // Parcourir le chemin du thread du plus ancien (thread principal) au plus récent (thread actif)
-    for (let i = 0; i < threadPath.length; i++) {
-        const currentThreadInPath = threadPath[i];
-        
-        // Pour le thread principal, on ajoute tous ses messages jusqu'au point de branchement
-        if (i === 0) { // Le thread principal est toujours le premier dans le chemin
-            for (const msg of currentThreadInPath.messages) {
-                relevantMessageIds.add(msg.id);
-                // Si on atteint le point de branchement, on arrête d'ajouter les messages du thread principal
-                if (msg.id === branchingPointMessageId) {
-                    foundBranchingPoint = true;
-                    break;
-                }
-            }
-        } 
-        // Pour les threads intermédiaires, on ajoute leurs messages pertinents
-        else if (i < threadPath.length - 1) {
-            // Pour les threads intermédiaires, on ajoute uniquement le message parent
-            // et tous les messages jusqu'au prochain point de branchement
-            const nextBranchingPoint = threadPath[i+1].parentMessageId;
-            let shouldAdd = false;
+    // Pour les messages du parent jusqu'au point de branchement
+    if (parentThreadId) {
+        const parentThread = currentConversation.threads[parentThreadId];
+        if (parentThread) {
+            let includeMessage = true;
             
-            for (const msg of currentThreadInPath.messages) {
-                if (msg.id === threadPath[i].parentMessageId) {
-                    shouldAdd = true;
-                }
+            for (const msg of parentThread.messages) {
+                relevantMessageIds.add(msg.id);
                 
-                if (shouldAdd) {
-                    relevantMessageIds.add(msg.id);
-                }
-                
-                // Arrêter quand on atteint le prochain point de branchement
-                if (msg.id === nextBranchingPoint) {
+                // Si on atteint le point de branchement, on arrête après ce message
+                if (msg.id === branchingPointMessageId) {
+                    includeMessage = false;
                     break;
                 }
             }
-        } 
-        // Pour le dernier thread (le thread actif), on ajoute tous ses messages
-        else {
-            currentThreadInPath.messages.forEach(msg => {
-                relevantMessageIds.add(msg.id);
-            });
         }
     }
     
-    // ÉTAPE 6: Afficher les messages pertinents dans l'interface
+    // Ajouter tous les messages du thread actuel
+    thread.messages.forEach(msg => {
+        relevantMessageIds.add(msg.id);
+    });
+    
+    // Afficher les messages pertinents
     document.querySelectorAll('.messages-list > .message').forEach(msg => {
         const messageId = msg.dataset.messageId;
         if (relevantMessageIds.has(messageId)) {
             msg.classList.remove('hidden');
             msg.style.display = 'flex';
             
-            // Ajouter une classe pour les messages du thread actif (utile pour le style)
+            // Style pour les messages du thread actif
             if (threadId !== currentConversation.mainThreadId) {
-                const mainThread = currentConversation.threads[currentConversation.mainThreadId];
-                const isInMainThread = mainThread.messages.some(m => m.id === messageId);
+                const parentThread = currentConversation.threads[parentThreadId];
+                const isInParentThread = parentThread && parentThread.messages.some(m => m.id === messageId);
                 
-                if (!isInMainThread) {
+                if (!isInParentThread) {
                     msg.classList.add('active-thread-message');
                 } else {
                     msg.classList.remove('active-thread-message');
@@ -192,8 +168,35 @@ function hideAllMessagesExcept(threadId) {
         }
     });
     
-    // ÉTAPE 7: Mettre à jour les indicateurs de thread pour tous les messages
+    // Mettre à jour les indicateurs visuels
     updateThreadIndicators();
+    
+    // Ajouter une indication visuelle claire pour montrer où commence la nouvelle branche
+    addBranchingSeparator(branchingPointMessageId);
+}
+
+function addBranchingSeparator(messageId) {
+    // Trouver le message de branchement
+    const branchingMessage = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (!branchingMessage) return;
+    
+    // Vérifier si un séparateur existe déjà
+    let separator = document.querySelector('.branch-separator');
+    if (!separator) {
+        separator = document.createElement('div');
+        separator.className = 'branch-separator';
+        separator.style.margin = '10px 0';
+        separator.style.padding = '5px 10px';
+        separator.style.backgroundColor = 'rgba(16, 163, 127, 0.1)';
+        separator.style.borderLeft = '3px solid var(--primary-color)';
+        separator.style.borderRadius = '0 4px 4px 0';
+        separator.style.fontSize = '12px';
+        separator.style.color = 'var(--text-light)';
+        separator.innerHTML = '<i class="fas fa-code-branch"></i> Début de la branche alternative';
+    }
+    
+    // Insérer le séparateur après le message de branchement
+    branchingMessage.after(separator);
 }
 
 /**
@@ -474,15 +477,19 @@ function handleCreateThreadButtonClick(userMessageId, assistantMessageId) {
         return;
     }
     
-    // Créer un nouveau thread
+    // Créer un nouveau thread à partir du message de l'assistant
     const newThreadId = createNewThread(assistantMessageId);
     
-    // Si la création a réussi, ajouter un visuel pour ce thread
+    // Si la création a réussi
     if (newThreadId) {
+        // Obtenir la conversation et le thread
+        const currentConversation = getCurrentConversation();
+        const newThread = currentConversation.threads[newThreadId];
+        
         // Masquer les messages non pertinents
         hideAllMessagesExcept(newThreadId);
         
-        // Mettre à jour l'interface pour montrer qu'on est dans ce nouveau thread
+        // Mettre à jour l'interface
         updateActiveThreadTags(newThreadId);
         
         // Informer l'utilisateur

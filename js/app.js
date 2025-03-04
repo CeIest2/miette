@@ -75,7 +75,7 @@ function createNewConversation() {
     return newConversation;
 }
 
-// Fonction pour créer un nouveau thread
+// Fonction modifiée pour créer un nouveau thread
 function createNewThread(parentMessageId) {
     const currentConversation = getCurrentConversation();
     if (!currentConversation) return;
@@ -86,14 +86,21 @@ function createNewThread(parentMessageId) {
     // Créer le nouveau thread
     const newThreadId = generateUniqueId();
     
+    // Trouver le message parent dans ce thread
+    const parentMessage = parentThread.messages.find(msg => msg.id === parentMessageId);
+    if (!parentMessage) {
+        console.error("Message parent non trouvé!");
+        return null;
+    }
+    
     // Ajouter le thread à la conversation
     currentConversation.threads[newThreadId] = {
         id: newThreadId,
         parentId: appState.currentThreadId, // Le parent est le thread actuel
         parentMessageId: parentMessageId, // ID du message auquel ce thread répond
-        messages: [],
+        messages: [], // Le nouveau thread commence vide
         childThreads: [],
-        title: `Thread ${newThreadId.slice(0, 4)}`
+        title: `Branche ${newThreadId.slice(0, 4)}`
     };
     
     // Ajouter le thread enfant au thread parent
@@ -101,12 +108,6 @@ function createNewThread(parentMessageId) {
     
     // Définir comme thread actuel
     appState.currentThreadId = newThreadId;
-    
-    // Masquer les messages non pertinents
-    hideAllMessagesExcept(newThreadId);
-    
-    // Mettre à jour l'interface
-    updateUI();
     
     // Sauvegarder dans le localStorage
     saveToLocalStorage();
