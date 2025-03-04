@@ -24,6 +24,11 @@ const ThreadAPI = {
         // Ajouter à la liste des threads enfants du parent
         parentThread.childThreads.push(newThreadId);
         
+        // Masquer les messages non pertinents pour ce nouveau thread
+        if (typeof hideAllMessagesExcept === 'function') {
+            hideAllMessagesExcept(newThreadId);
+        }
+        
         // Sauvegarder
         saveToLocalStorage();
         
@@ -72,23 +77,78 @@ const ThreadAPI = {
         return path;
     },
     
+    // Obtenir le chemin complet d'un thread avec tous les IDs de messages pertinents
+    getFullPath: function(threadId) {
+        const path = this.getPath(threadId);
+        
+        // Récupérer tous les IDs de messages pertinents dans ce chemin
+        const relevantMessageIds = new Set();
+        
+        path.forEach(thread => {
+            if (thread.parentMessageId) {
+                relevantMessageIds.add(thread.parentMessageId);
+            }
+            
+            // Ajouter les IDs de tous les messages du thread
+            thread.messages.forEach(msg => {
+                relevantMessageIds.add(msg.id);
+            });
+        });
+        
+        return Array.from(relevantMessageIds);
+    },
+    
     // Activer un thread (le rendre courant)
     activate: function(threadId) {
         const thread = this.get(threadId);
         if (!thread) return false;
         
+        // Définir le thread actuel
         appState.currentThreadId = threadId;
         
+        // Masquer tous les messages non pertinents
+        if (typeof hideAllMessagesExcept === 'function') {
+            hideAllMessagesExcept(threadId);
+        } else {
+            // Implémentation de secours si la fonction n'est pas disponible
+            console.warn("Fonction hideAllMessagesExcept non disponible");
+            
+            // Logique de base pour le thread principal
+            const currentConversation = getCurrentConversation();
+            if (threadId === currentConversation.mainThreadId) {
+                // Afficher tous les messages du thread principal
+                document.querySelectorAll('.messages-list > .message').forEach(msg => {
+                    msg.classList.remove('hidden');
+                    msg.style.display = 'flex';
+                });
+                
+                // Masquer les threads appendés
+                document.querySelectorAll('.appended-thread').forEach(thread => {
+                    thread.remove();
+                });
+            }
+        }
+        
         // Afficher les messages du thread
-        displayThreadMessages(threadId);
+        if (typeof appendThreadMessages === 'function') {
+            appendThreadMessages(threadId);
+        } else {
+            // Si la fonction n'est pas disponible, utiliser displayThreadMessages
+            displayThreadMessages(threadId);
+        }
         
         // Mettre à jour l'indication visuelle du thread actif
-        updateThreadIndicator();
+        if (typeof updateActiveThreadTags === 'function') {
+            updateActiveThreadTags(threadId);
+        }
         
         // Mettre à jour le visualiseur
         if (typeof updateThreadVisualizer === 'function') {
             updateThreadVisualizer();
         }
+        
+        // Sauvegarder l'état
+        saveToLocalStorage();
         
         return true;
     },
@@ -146,6 +206,14 @@ const ThreadAPI = {
                 this.activate(currentConversation.mainThreadId);
             }
         }
+        
+        // Nettoyer l'interface utilisateur
+        if (typeof clearAppendedThreads === 'function') {
+            clearAppendedThreads();
+        }
+        document.querySelectorAll(`.thread-tag[data-thread-id="${threadId}"]`).forEach(tag => {
+            tag.remove();
+        });
         
         saveToLocalStorage();
         return true;

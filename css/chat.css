@@ -83,11 +83,53 @@
 
 /* Style de base pour tous les messages */
 .message {
-    display: flex;
-    padding: 15px 0;
-    margin-bottom: 15px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
 
+/* Classe pour les messages cachés */
+.message.hidden {
+    display: none !important;
+}
+
+.appended-thread {
+    margin-top: 20px;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 15px;
     position: relative;
+    margin-bottom: 30px;
+    background-color: rgba(16, 163, 127, 0.03);
+    border-radius: 0 8px 8px 0;
+    animation: thread-fade-in 0.3s forwards;
+}
+
+/* Animation pour l'apparition des threads */
+@keyframes thread-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.thread-fading-out {
+    animation: thread-fade-out 0.3s forwards;
 }
 
 .create-thread-btn {
@@ -103,7 +145,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.2s;
+    transition: background-color 0.2s, transform 0.2s, opacity 0.2s;
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     opacity: 0; /* Caché par défaut */
@@ -221,21 +263,38 @@
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 10px;
-    text-align: left; /* Toujours aligné à gauche */
+    text-align: left;
+    padding: 4px 0;
 }
+
 
 /* Style des tags de thread */
 .thread-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background-color: rgba(16, 163, 127, 0.1);
+    border-radius: 4px;
+    color: var(--text-color);
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
     position: relative;
-    transition: all 0.2s ease;
 }
 
 .thread-tag.active {
     background-color: rgba(16, 163, 127, 0.25);
+    border-color: rgba(16, 163, 127, 0.5);
     font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .thread-tag:hover {
+    background-color: rgba(16, 163, 127, 0.2);
     transform: translateY(-2px);
 }
 
@@ -251,17 +310,10 @@
     border-radius: 50%;
     background-color: var(--primary-color);
     opacity: 0.8;
+    box-shadow: 0 0 3px rgba(16, 163, 127, 0.3);
 }
 
-.appended-thread {
-    margin-top: 20px;
-    border-left: 3px solid var(--primary-color);
-    padding-left: 15px;
-    position: relative;
-    margin-bottom: 30px;
-    background-color: rgba(16, 163, 127, 0.03);
-    border-radius: 0 8px 8px 0;
-}
+
 
 .thread-header {
     margin-bottom: 15px;
@@ -275,7 +327,29 @@
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(16, 163, 127, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
+
+.close-thread-btn {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.close-thread-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-color);
+    transform: scale(1.1);
+}
+
 
 .thread-indicator .thread-path {
     display: flex;
@@ -325,28 +399,21 @@
 }
 
 .thread-message {
-    padding: 10px 0;
-    margin-bottom: 10px;
+    opacity: 0.95;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: opacity 0.2s, transform 0.2s;   
+}
+
+.thread-message:hover {
+    opacity: 1;
+    transform: translateY(-1px);
 }
 
 .thread-message .message-content {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.appended-thread {
-    animation: fadeIn 0.3s ease-in-out;
-}
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
 /* Animation pour transitions de threads */
 .thread-transition-enter {
@@ -646,13 +713,6 @@
     transform: translateY(10px);
     animation: fadeIn 0.3s forwards;
     animation-delay: 0.2s;
-}
-
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* Style pour le bouton d'annulation */

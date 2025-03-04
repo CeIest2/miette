@@ -102,6 +102,9 @@ function createNewThread(parentMessageId) {
     // Définir comme thread actuel
     appState.currentThreadId = newThreadId;
     
+    // Masquer les messages non pertinents
+    hideAllMessagesExcept(newThreadId);
+    
     // Mettre à jour l'interface
     updateUI();
     
@@ -129,20 +132,24 @@ function getThreadById(threadId) {
 
 
 // Afficher les messages d'un thread spécifique
-function displayThreadMessages(threadId) {
+function appendThreadMessages(threadId) {
     const currentConversation = getCurrentConversation();
     if (!currentConversation) return;
     
     const thread = currentConversation.threads[threadId];
     if (!thread) return;
     
-    // Effacer la zone de messages
-    clearMessages();
+    // Nettoyer les anciens messages de thread appendés
+    clearAppendedThreads();
     
-    // Afficher les messages du thread
-    thread.messages.forEach(message => {
-        addMessageToUI(message.role, message.content, message.id);
-    });
+    // Créer un conteneur pour ce thread
+    const threadContainer = document.createElement('div');
+    threadContainer.className = 'appended-thread';
+    threadContainer.dataset.threadId = threadId;
+    
+    // Ajouter un séparateur/indicateur pour montrer où commence le thread
+    const threadHeader = document.createElement('div');
+    threadHeader.className = 'thread-header';
     
     // Si le thread a un parent, afficher le message parent en tant que référence
     if (thread.parentId && thread.parentMessageId) {
@@ -150,10 +157,72 @@ function displayThreadMessages(threadId) {
         const parentMessage = parentThread.messages.find(msg => msg.id === thread.parentMessageId);
         
         if (parentMessage) {
-            // Ajouter une référence au message parent en haut du thread
-            addThreadReferenceToUI(parentMessage, thread.parentId);
+            threadHeader.innerHTML = `
+                <div class="thread-indicator">
+                    <div class="thread-path">
+                        <span class="reference-label">Suite du message: </span>
+                        <span class="parent-message-preview">${truncateText(parentMessage.content, 40)}</span>
+                    </div>
+                    <button class="close-thread-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Ajouter un écouteur d'événement pour fermer le thread
+            threadHeader.querySelector('.close-thread-btn').addEventListener('click', () => {
+                // Revenir au thread parent et afficher ses messages
+                appState.currentThreadId = thread.parentId;
+                hideAllMessagesExcept(thread.parentId);
+                updateActiveThreadTags(thread.parentId);
+            });
         }
     }
+    
+    threadContainer.appendChild(threadHeader);
+    
+    // Créer un conteneur pour les messages du thread
+    const messagesContainer = document.createElement('div');
+    messagesContainer.className = 'thread-messages';
+    
+    // Ajouter les messages du thread
+    thread.messages.forEach(message => {
+        // Créer l'élément de message
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${message.role}-message thread-message`;
+        messageElement.dataset.messageId = message.id;
+        
+        // Créer l'avatar
+        const avatarElement = document.createElement('div');
+        avatarElement.className = `message-avatar ${message.role}-avatar`;
+        
+        // Définir l'icône de l'avatar
+        avatarElement.innerHTML = message.role === 'user' ? 
+            '<i class="fas fa-user"></i>' : 
+            '<i class="fas fa-robot"></i>';
+        
+        // Créer le conteneur de contenu
+        const contentElement = document.createElement('div');
+        contentElement.className = 'message-content markdown';
+        contentElement.innerHTML = formatMessageContent(message.content);
+        
+        // Assembler le message
+        messageElement.appendChild(avatarElement);
+        messageElement.appendChild(contentElement);
+        
+        messagesContainer.appendChild(messageElement);
+    });
+    
+    threadContainer.appendChild(messagesContainer);
+    
+    // Ajouter le thread à la fin de la liste des messages
+    document.querySelector('.messages-list').appendChild(threadContainer);
+    
+    // Ajouter des styles pour distinguer visuellement les messages du thread
+    addThreadStyles();
+    
+    // Faire défiler jusqu'au début du thread
+    threadHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Changer de conversation
