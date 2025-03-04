@@ -75,6 +75,231 @@ function generateDirectResponse(userMessage) {
     return genericResponses[Math.floor(Math.random() * genericResponses.length)];
 }
 
+function clearAppendedThreads() {
+    const appendedThreads = document.querySelectorAll('.appended-thread');
+    appendedThreads.forEach(thread => thread.remove());
+}
+
+function updateActiveThreadTags(activeThreadId) {
+    document.querySelectorAll('.thread-tag').forEach(tag => {
+        if (tag.dataset.threadId === activeThreadId) {
+            tag.classList.add('active');
+        } else {
+            tag.classList.remove('active');
+        }
+    });
+}
+
+
+function addThreadStyles() {
+    // Vérifier si les styles existent déjà
+    if (!document.getElementById('thread-append-styles')) {
+        const styleElement = document.createElement('style');
+        styleElement.id = 'thread-append-styles';
+        styleElement.textContent = `
+            .appended-thread {
+                margin-top: 20px;
+                border-left: 3px solid var(--primary-color);
+                padding-left: 15px;
+                position: relative;
+            }
+            
+            .thread-header {
+                margin-bottom: 15px;
+            }
+            
+            .thread-indicator {
+                background-color: rgba(16, 163, 127, 0.1);
+                border-radius: 8px;
+                padding: 10px 15px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            
+            .close-thread-btn {
+                background-color: transparent;
+                border: none;
+                cursor: pointer;
+                color: var(--text-light);
+                border-radius: 50%;
+                width: 28px;
+                height: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .close-thread-btn:hover {
+                background-color: rgba(0, 0, 0, 0.1);
+            }
+            
+            .thread-message {
+                opacity: 0.92;
+            }
+        `;
+        document.head.appendChild(styleElement);
+    }
+}
+
+function closeAppendedThreads() {
+    clearAppendedThreads();
+    // Si le thread actuel n'est pas le principal, revenir au thread principal
+    const currentConversation = getCurrentConversation();
+    if (currentConversation && appState.currentThreadId !== currentConversation.mainThreadId) {
+        appState.currentThreadId = currentConversation.mainThreadId;
+        updateActiveThreadTags(currentConversation.mainThreadId);
+    }
+}
+
+// Modifier la fonction addThreadTagToMessage pour activer notre nouveau comportement
+function addThreadTagToMessage(messageId, threadId) {
+    // Trouver le message
+    const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (!messageElement) {
+        console.error(`Message avec ID ${messageId} introuvable`);
+        return;
+    }
+    
+    // Trouver ou créer la liste des threads
+    let threadList = messageElement.querySelector('.thread-list');
+    if (!threadList) {
+        threadList = document.createElement('div');
+        threadList.className = 'thread-list';
+        messageElement.querySelector('.message-content').appendChild(threadList);
+    }
+    
+    // Créer le tag
+    const threadTag = document.createElement('span');
+    threadTag.className = 'thread-tag active'; // Active car c'est le thread nouvellement créé
+    
+    // Obtenir les informations du thread
+    const currentConversation = getCurrentConversation();
+    const thread = currentConversation.threads[threadId];
+    
+    threadTag.textContent = thread ? (thread.title || `Thread ${threadId.slice(0, 4)}`) : `Thread ${threadId.slice(0, 4)}`;
+    threadTag.dataset.threadId = threadId;
+    
+    // Ajouter l'événement pour basculer vers ce thread
+    threadTag.addEventListener('click', () => {
+        // Utiliser notre nouvelle fonction au lieu de switchToThread
+        appState.currentThreadId = threadId;
+        appendThreadMessages(threadId);
+        updateActiveThreadTags(threadId);
+    });
+    
+    // Ajouter à la liste
+    threadList.appendChild(threadTag);
+}
+
+function appendThreadMessages(threadId) {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation) return;
+    
+    const thread = currentConversation.threads[threadId];
+    if (!thread) return;
+    
+    // Nettoyer les anciens messages de thread si présents
+    clearAppendedThreads();
+    
+    // Créer un conteneur pour ce thread
+    const threadContainer = document.createElement('div');
+    threadContainer.className = 'appended-thread';
+    threadContainer.dataset.threadId = threadId;
+    
+    // Ajouter un séparateur/indicateur pour montrer où commence le thread
+    const threadHeader = document.createElement('div');
+    threadHeader.className = 'thread-header';
+    
+    // Si le thread a un parent, afficher le message parent en tant que référence
+    if (thread.parentId && thread.parentMessageId) {
+        const parentThread = currentConversation.threads[thread.parentId];
+        const parentMessage = parentThread.messages.find(msg => msg.id === thread.parentMessageId);
+        
+        if (parentMessage) {
+            threadHeader.innerHTML = `
+                <div class="thread-indicator">
+                    <div class="thread-path">
+                        <span class="reference-label">Suite du message: </span>
+                        <span class="parent-message-preview">${truncateText(parentMessage.content, 40)}</span>
+                    </div>
+                    <button class="close-thread-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Ajouter un écouteur d'événement pour fermer le thread
+            threadHeader.querySelector('.close-thread-btn').addEventListener('click', () => {
+                clearAppendedThreads();
+                // Revenir au thread parent
+                appState.currentThreadId = thread.parentId;
+                updateActiveThreadTags(thread.parentId);
+            });
+        }
+    }
+    
+    threadContainer.appendChild(threadHeader);
+    
+    // Créer un conteneur pour les messages du thread
+    const messagesContainer = document.createElement('div');
+    messagesContainer.className = 'thread-messages';
+    
+    // Ajouter les messages du thread
+    thread.messages.forEach(message => {
+        // Créer l'élément de message comme dans addMessageToUI mais simplifié
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${message.role}-message thread-message`;
+        messageElement.dataset.messageId = message.id;
+        
+        // Créer l'avatar
+        const avatarElement = document.createElement('div');
+        avatarElement.className = `message-avatar ${message.role}-avatar`;
+        
+        // Définir l'icône de l'avatar
+        avatarElement.innerHTML = message.role === 'user' ? 
+            '<i class="fas fa-user"></i>' : 
+            '<i class="fas fa-robot"></i>';
+        
+        // Créer le conteneur de contenu
+        const contentElement = document.createElement('div');
+        contentElement.className = 'message-content markdown';
+        contentElement.innerHTML = formatMessageContent(message.content);
+        
+        // Assembler le message
+        messageElement.appendChild(avatarElement);
+        messageElement.appendChild(contentElement);
+        
+        messagesContainer.appendChild(messageElement);
+    });
+    
+    threadContainer.appendChild(messagesContainer);
+    
+    // Ajouter le thread à la fin de la liste des messages
+    document.querySelector('.messages-list').appendChild(threadContainer);
+    
+    // Ajouter des styles pour distinguer visuellement les messages du thread
+    addThreadStyles();
+    
+    // Faire défiler jusqu'au début du thread
+    threadHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+
+function switchToThread(threadId) {
+    const currentConversation = getCurrentConversation();
+    if (!currentConversation || !currentConversation.threads[threadId]) return;
+    
+    appState.currentThreadId = threadId;
+    
+    // Au lieu de remplacer les messages existants, nous allons ajouter les messages du thread à la suite
+    appendThreadMessages(threadId);
+    
+    // Mettre à jour les tags de thread pour indiquer lequel est actif
+    updateActiveThreadTags(threadId);
+}
+
+
 // Fonction qui communique avec le serveur backend
 async function getResponseFromBackend(userMessage) {
     try {
@@ -137,34 +362,9 @@ function addMessageToUI(role, content, messageId) {
     const avatarElement = document.createElement('div');
     avatarElement.className = `message-avatar ${role}-avatar`;
     
-    // Définir l'icône de l'avatar
+    // Définir l'icône de l'avatar en fonction du rôle
     if (role === 'user') {
-        const createThreadBtn = document.createElement('button');
-        createThreadBtn.className = 'create-thread-btn';
-        createThreadBtn.innerHTML = '<i class="fas fa-plus"></i>';
-        createThreadBtn.title = "Créer un nouveau fil de discussion";
-        createThreadBtn.addEventListener('click', () => {
-            // Pour chaque message utilisateur, on veut créer un thread à partir du message de l'assistant qui suit
-            let nextAssistantMessage = messageElement.nextElementSibling;
-            while (nextAssistantMessage && !nextAssistantMessage.classList.contains('assistant-message')) {
-                nextAssistantMessage = nextAssistantMessage.nextElementSibling;
-            }
-            
-            if (nextAssistantMessage) {
-                const assistantMessageId = nextAssistantMessage.dataset.messageId;
-                // Activer le mode de création de thread avec ce message
-                activateThreadCreationMode(assistantMessageId);
-            } else {
-                // Si pas de message assistant suivant, afficher une notification
-                if (typeof showNotification === 'function') {
-                    showNotification("Vous devez d'abord obtenir une réponse de l'assistant", "warning");
-                } else {
-                    console.warn("Pas de réponse de l'assistant pour créer un thread");
-                }
-            }
-        });
-        
-        messageElement.appendChild(createThreadBtn);
+        avatarElement.innerHTML = '<i class="fas fa-user"></i>';
     } else {
         avatarElement.innerHTML = '<i class="fas fa-robot"></i>';
     }
@@ -176,7 +376,7 @@ function addMessageToUI(role, content, messageId) {
     // Formater le contenu du message (avec Markdown)
     contentElement.innerHTML = formatMessageContent(content);
     
-    // Ajouter le bouton de création de thread pour les messages utilisateur
+    // Ajouter le bouton de création de thread uniquement pour les messages utilisateur
     if (role === 'user') {
         const createThreadBtn = document.createElement('button');
         createThreadBtn.className = 'create-thread-btn';
@@ -184,7 +384,6 @@ function addMessageToUI(role, content, messageId) {
         createThreadBtn.title = "Créer un nouveau fil de discussion";
         createThreadBtn.addEventListener('click', () => {
             // Pour chaque message utilisateur, on veut créer un thread à partir du message de l'assistant qui suit
-            // On cherche donc le prochain message assistant après celui-ci
             let nextAssistantMessage = messageElement.nextElementSibling;
             while (nextAssistantMessage && !nextAssistantMessage.classList.contains('assistant-message')) {
                 nextAssistantMessage = nextAssistantMessage.nextElementSibling;
@@ -201,32 +400,22 @@ function addMessageToUI(role, content, messageId) {
                 }
             } else {
                 // Si pas de message assistant suivant, afficher une notification
-                showNotification("Vous devez d'abord obtenir une réponse de l'assistant", "warning");
+                if (typeof showNotification === 'function') {
+                    showNotification("Vous devez d'abord obtenir une réponse de l'assistant", "warning");
+                } else {
+                    console.warn("Pas de réponse de l'assistant pour créer un thread");
+                }
             }
         });
         
         messageElement.appendChild(createThreadBtn);
     }
     
-    // Si c'est un message de l'assistant, ajouter les actions existantes
+    // Si c'est un message de l'assistant, ajouter uniquement la zone pour les tags de thread
+    // (Suppression du bouton "Nouveau fil" qui fait doublon)
     if (role === 'assistant') {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'message-actions';
-        
-        const newThreadBtn = document.createElement('button');
-        newThreadBtn.className = 'new-thread-btn';
-        newThreadBtn.innerHTML = '<i class="fas fa-code-branch"></i> Nouveau fil';
-        newThreadBtn.addEventListener('click', () => {
-            // Créer un nouveau thread à partir de ce message
-            const newThreadId = createNewThread(messageId);
-            
-            // Si la création a réussi, ajouter un visuel pour ce thread
-            if (newThreadId) {
-                addThreadTagToMessage(messageId, newThreadId);
-            }
-        });
-        
-        actionsDiv.appendChild(newThreadBtn);
         contentElement.appendChild(actionsDiv);
     }
     

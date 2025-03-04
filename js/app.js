@@ -127,19 +127,6 @@ function getThreadById(threadId) {
     return currentConversation.threads[threadId];
 }
 
-// Basculer vers un thread spécifique
-function switchToThread(threadId) {
-    const currentConversation = getCurrentConversation();
-    if (!currentConversation || !currentConversation.threads[threadId]) return;
-    
-    appState.currentThreadId = threadId;
-    
-    // Mettre à jour l'interface pour afficher les messages du thread
-    displayThreadMessages(threadId);
-    
-    // Mettre à jour l'indicateur de thread actif
-    updateThreadIndicator();
-}
 
 // Afficher les messages d'un thread spécifique
 function displayThreadMessages(threadId) {

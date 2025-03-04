@@ -226,36 +226,55 @@
 
 /* Style des tags de thread */
 .thread-tag {
-    background-color: rgba(16, 163, 127, 0.1);
-    border: 1px solid rgba(16, 163, 127, 0.2);
-    border-radius: 12px;
-    padding: 3px 10px;
-    font-size: 12px;
-    color: var(--primary-color);
-    cursor: pointer;
+    position: relative;
     transition: all 0.2s ease;
 }
 
-.thread-tag:hover {
-    background-color: rgba(16, 163, 127, 0.2);
-}
-
 .thread-tag.active {
-    background-color: rgba(16, 163, 127, 0.3);
-    border-color: var(--primary-color);
+    background-color: rgba(16, 163, 127, 0.25);
+    font-weight: 500;
 }
 
-/* Indicateur de thread */
-.thread-indicator {
-    background-color: rgba(0, 0, 0, 0.03);
-    border-radius: 8px;
-    padding: 8px 12px;
+.thread-tag:hover {
+    transform: translateY(-2px);
+}
+
+/* Indicateur visuel pour montrer qu'un thread est actif */
+.thread-tag.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    opacity: 0.8;
+}
+
+.appended-thread {
+    margin-top: 20px;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 15px;
+    position: relative;
+    margin-bottom: 30px;
+    background-color: rgba(16, 163, 127, 0.03);
+    border-radius: 0 8px 8px 0;
+}
+
+.thread-header {
     margin-bottom: 15px;
+}
+
+.thread-indicator {
+    background-color: rgba(16, 163, 127, 0.1);
+    border-radius: 8px 8px 0 0;
+    padding: 10px 15px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 12px;
-    color: var(--text-light);
+    border-bottom: 1px solid rgba(16, 163, 127, 0.2);
 }
 
 .thread-indicator .thread-path {
@@ -266,6 +285,11 @@
 
 .thread-indicator .separator {
     color: var(--text-light);
+}
+
+.close-thread-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-color);
 }
 
 /* Bouton pour revenir au parent */
@@ -298,6 +322,30 @@
     border-left: 2px solid var(--border-color);
     padding-left: 15px;
     margin-top: 10px;
+}
+
+.thread-message {
+    padding: 10px 0;
+    margin-bottom: 10px;
+}
+
+.thread-message .message-content {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.appended-thread {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Animation pour transitions de threads */
